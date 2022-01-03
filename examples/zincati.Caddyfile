@@ -1,0 +1,28 @@
+# curl -k --resolve '*:12345:127.0.0.1' 'https://local-metrics.example.com:12345/bridge?selector=zincati'
+{
+	order local_metrics_proxy before metrics
+	auto_https disable_redirects
+}
+
+https://local-metrics.example.com:12345 {
+	log
+	tls internal
+
+	@metrics_proxy_zincati {
+		method GET
+		path /bridge
+		query selector=zincati
+	}
+
+	handle @metrics_proxy_zincati {
+		local_metrics_proxy * {
+			uds {
+				path "/run/zincati/public/metrics.promsock"
+			}
+		}
+	}
+
+	handle {
+		respond "Not found" 404
+	}
+}
